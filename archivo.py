@@ -1,3 +1,4 @@
+
 import os
 import datetime as dt
 
@@ -23,23 +24,20 @@ class Archivo:
         assert isinstance(self, Archivo), "El atributo debe ser tipo Archivo"
         return "Archivo: {} Ruta: {}".format(self.name, self.base_dir)
 
-    def maxconsumo(self):
+    def leer(self):
         """
-        Metodo para determinar la demanda maxima y la fecha de ocurrencia de un archivo sobre consumo energetico
+        Lee y procesa el archivo
 
-        :return: retorna una tupla con la fecha de maximo consumo y el valor maximo de consumo
-        fecha_m, fecha de maximo consumo
-        mayor, maximo consumo
-
+        :return: fechas: list, que contiene las fechas de consumo del mes
+        :return: demanda: list, que contiene los consumos del mes
         """
+        assert isinstance(self, Archivo), "El atributo debe ser tipo Archivo"
         data = open(self.path)  # Se abre el archivo a procesar
         data.readline().split(";")  # se lee el encabezado sin asignar, para mover el cursor a los datos
 
         # Variables Auxiliares
         demanda = []  # Almacena el consumo energetico del mes
         fechas = []  # Almacena las fechas y horas de consumo
-        fecha_m = 0  # Almacena la fecha de mayor consumo
-        mayor = 0  # Almacena el mayor consumo
 
         # Se recorre cada linea del archivo y se extraen sus valores
         for datos in data:
@@ -58,12 +56,28 @@ class Archivo:
             demanda.extend(demanda_dia)  # Añadimos el consumo de un día a la demanda total del mes
             fechas.extend(horas)  # Añadimos la fecha del dia de consumo con sus 24 horas
 
+        data.close()  # Cerramos el archivo
+        return fechas, demanda  # retornamos la fecha y el consumo
+
+    def maxconsumo(self):
+        """
+        Metodo para determinar la demanda maxima y la fecha de ocurrencia de un archivo sobre consumo energetico
+
+        :return: retorna una tupla con la fecha de maximo consumo y el valor maximo de consumo
+        fecha_m, fecha de maximo consumo
+        mayor, maximo consumo
+
+        """
+        assert isinstance(self, Archivo), "El atributo debe ser tipo Archivo"
+        mayor = 0
+        fecha_m = ""
+        fechas, demanda = self.leer()
+
         for i in range(len(demanda)):
             if demanda[i] >= mayor:  # determina el nuevo valor de mayor consumo
                 fecha_m = fechas[i]  # guarda el mayor consumo
                 mayor = demanda[i]  # guarda la fecha de mayor consumo
 
-        data.close()  # Cerramos el archivo
         return fecha_m, mayor  # retornamos la fecha y el consumo
 
     def procesar(self, rango_inf: int, rango_sup: int):
@@ -73,6 +87,7 @@ class Archivo:
         :param rango_sup: Limite superior del rango de fechas a procesar
         :return: una tupla de listas con las fechas y los consumos deseados
         """
+        assert isinstance(self, Archivo), "El atributo debe ser tipo Archivo"
         data = open(self.path)  # abre el archivo
 
         data.readline().split(";")  # leo la primera linea o encabezado
@@ -125,9 +140,9 @@ class Archivo:
         #     fecha = []
         # if consumo is None:
         #     consumo = []
-
+        assert isinstance(self, Archivo), "El atributo debe ser tipo Archivo"
         if process and rango_sup > rango_inf >= 0:
-            fecha, consumo = self.procesar(rango_inf, rango_sup)    # Proceso el archivo entre los dias dados
+            fecha, consumo = self.procesar(rango_inf, rango_sup)  # Proceso el archivo entre los dias dados
             data = open(name, "w")  # abro el archivo txt si existe o lo creo en caso de que no
             for i in range(0, len(consumo)):  # Recorro el arreglo de valores a escribir en el archivo
                 data.write(str(fecha[i]))  # Escribo la fecha
@@ -143,14 +158,80 @@ class Archivo:
                 data.write(str(fecha[i]))  # Escribo la fecha
                 data.write("; ")  # Separador
                 data.write(str(consumo[i]) + "\n")  # Escribo la demanda y salto de linea
-            data.close()    # cierro el archivo
+            data.close()  # cierro el archivo
             print("se escribio el archivo  con los datos respectivos")
 
 
+class Carpeta:
+    def __init__(self, path: str):
+        """
+        Constructor de la clase Carpeta
+
+        :param path: str, que contiene la ruta de la carpeta
+        """
+        self.path = path  # Atributo de ruta de la carpeta
+        self.list_files = os.listdir(path)  # Atributo de los elementos de la carpeta
+        self.files_csv = self.archivoscsv()  # Atributo de los elementos csv de la carpeta
+
+    def __str__(self):
+        """
+        Convierte un objeto de la clase Carpeta a string
+
+        :return: retorna el string de la clase Carpeta
+        """
+        assert isinstance(self, Carpeta), "El atributo debe ser tipo Carpeta"
+        return "Ruta: {}".format(self.path)
+
+    def archivoscsv(self):
+        """
+        Encuentra los archivos csv del directorio
+        :return: Retorna un diccionario con todos los archivos csv que se pueden procesar
+        """
+        csv = {}  # Diccionario donde se almacenan los elementos
+        idx = 1  # Claves para el diccionarios
+        for i in range(0, len(self.list_files)):  # iteramos sobre todos los elementos en la carpeta
+            if self.list_files[i].lower().endswith(".csv"):  # Si el archivo es csv
+                csv[str(idx)] = self.list_files[i]  # lo almacenamos en el diccionario
+                idx += 1  # aumentamos el valor de la clave
+        return csv  # Retornamos el archivo csv
+
+    def procesar(self):
+        """
+        procesa los elementos csv de la carpeta
+        :return: dic: diccionario con el maximo de consumo de cada archivo procesado, sus fechas y sus consumos
+        :return: fecha: str, fecha del mes con mayor consumo, sirve de clave para extraer sus valores de dic.
+        :return: mayor: int, con el valor de consumo maximo de los archivo procesados.
+        """
+        dic = {}    # diccionario de listas, contendra el maximo consumo del mes y todos los datos del mes
+        mayor = 0   # Variable que contendra el valor de consumo maximo
+        fecha = ""  # Variable tipo str que contendra la fecha de mayor consumo
+        for i in self.files_csv:    # Iteramos sobre todos los archivos a procesar
+            file = Archivo(self.files_csv[i], self.path)    # creamos un objeto de la clase archivo
+            fecha, maximo = file.maxconsumo()   # extraemos la demanda maxima y su fecha del objeto archivo
+            mes, consumo = file.leer()  # procesamos el archivo
+            dic[str(fecha)] = [maximo, mes, consumo]    # construimos el diccionario para cada archivo
+
+        for i in dic:   # Recorremos el diccionario
+            if dic[i][0] >= mayor:  # determinamos el archivo con mayor consumo
+                mayor = dic[i][0]   # asignamos el valor de mayor consumo
+                fecha = i   # Guardamos la clave del mes de mayor consumo
+
+        return dic, fecha, mayor    # retornamos los valores de interes
+
+
 if __name__ == '__main__':
-    file = Archivo("MC-SIN-OFI-DR-Septiembre-2020.csv", "./")
+    file = Archivo("MC-SIN-OFI-DR-Julio-2020.csv", "./")
     print(file)
     print(type(file))
-    print(file.maxconsumo)
+    co, f = file.maxconsumo()
+    print("fecha", co, "consumo", f)
     dos, uno = file.procesar(5, 8)
-    file.escribr("hola.txt", False, fecha=dos,consumo=uno)
+    file.escribr("hola.txt", False, fecha=dos, consumo=uno)
+
+    carpeta = Carpeta("./")
+    print(carpeta.path)
+    print(carpeta.list_files)
+    print(carpeta.files_csv)
+    dicc, fm, m = carpeta.procesar()
+    print(fm, m)
+    print(dicc[fm][0])
