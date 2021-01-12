@@ -152,8 +152,8 @@ class Archivo:
                 data.write("; ")  # Separador
                 data.write(str(consumo[i]) + "\n")  # Escribo la demanda y salto de linea
             data.close()  # cierro el archivo
-            print("se escribio el archivo " + name + " del dia_{}_al_{} con los datos respectivos".format(9, rango_inf,
-                                                                                                          rango_sup))
+            # print("se escribio el archivo " + name + " del dia_{}_al_{} con los datos respectivos".format(rango_inf,
+            #                                                                                               rango_sup))
 
         elif not process:
             data = open(name, "w")  # abro el archivo txt si existe o lo creo en caso de que no
@@ -162,7 +162,7 @@ class Archivo:
                 data.write("; ")  # Separador
                 data.write(str(consumo[i]) + "\n")  # Escribo la demanda y salto de linea
             data.close()  # cierro el archivo
-            print("se escribio el archivo  con los datos respectivos")
+            # print("se escribio el archivo  con los datos respectivos")
 
 
 class Carpeta:
@@ -222,19 +222,19 @@ class Carpeta:
         return dic, fecha, mayor  # retornamos los valores de interes
 
 
-if __name__ == '__main__':
-    file = Archivo("MC-SIN-OFI-DR-Julio-2020.csv", "./")
-    print(file)
-    print(type(file))
-    co, f = file.maxconsumo()
-    print("fecha", co, "consumo", f)
-    dos, uno = file.procesar(5, 8)
-    file.escribr("hola.txt", False, fecha=dos, consumo=uno)
-
-    carpeta = Carpeta("./")
-    print(carpeta.path)
-    print(carpeta.list_files)
-    print(carpeta.files_csv)
-    dicc, fm, m = carpeta.procesar()
-    print(fm, m)
-    print(dicc[fm][0])
+# if __name__ == '__main__':
+#     file = Archivo("MC-SIN-OFI-DR-Julio-2020.csv", "./")
+#     print(file)
+#     print(type(file))
+#     co, f = file.maxconsumo()
+#     print("fecha", co, "consumo", f)
+#     dos, uno = file.procesar(5, 8)
+#     file.escribr("hola.txt", False, fecha=dos, consumo=uno)
+#
+#     carpeta = Carpeta("./")
+#     print(carpeta.path)
+#     print(carpeta.list_files)
+#     print(carpeta.files_csv)
+#     dicc, fm, m = carpeta.procesar()
+#     print(fm, m)
+#     print(dicc[fm][0])
