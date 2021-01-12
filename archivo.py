@@ -17,7 +17,6 @@ class Archivo:
             self.path = os.path.join(base_dir, name)  # Se asigna el atributo de path a la clase
         else:
             self.path = path
-            print("hola")
 
     def __str__(self):
         """
