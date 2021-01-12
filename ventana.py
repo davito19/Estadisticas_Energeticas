@@ -1,202 +1,239 @@
-import tkinter as tk
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from tkinter import *
+from tkinter import ttk
 from tkinter import filedialog
-import matplotlib
-from numpy import arange, sin, pi, cos
-import math
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-import archivo as Arch
+
+from archivo import Carpeta, Archivo
 import datetime as dt
 
 
+class Aplicacion():
+    def __init__(self):
+        self.raiz = Tk()
+        self.raiz.title("Demandas Energeticas")
 
-class Application(tk.Frame):
-    def __init__(self, root):
+        # Declara variables de control
 
-        tk.Frame.__init__(self, root)
+        self.path_dir = "./"
+        self.path_file = None
+        self.file = None
+        self.nameout = None
 
-        # options for buttons
-        button_opt = {'fill': tk.constants.BOTH, 'padx': 5, 'pady': 5}
+        self.ini = IntVar(value=1)
+        self.fin = DoubleVar(value=30)
+        self.total = StringVar(value='wait...')
 
-        # define buttons
-        tk.Button(self, text='askdirectory', command=self.processdirectory).pack(**button_opt)
-        tk.Button(self, text='askopenfile', command=self.processfile).pack(**button_opt)
-        tk.Button(self, text='asksaveasfile', command=self.asksaveasfile).pack(**button_opt)
-        tk.Button(self, text='exit', command=self.quit).pack(**button_opt)
+        # Carga imagen para asociar a widget Label()
 
-        # define options for opening a file
-        self.file_opt = options = {}
-        options['defaultextension'] = '.csv'
-        options['filetypes'] = [('all files', '.csv'), ('csv files', '.csv')]
-        options['initialdir'] = './'
-        options['parent'] = root
-        options['title'] = 'Abrir'
+        tren = PhotoImage(file='torre.png')
 
-        # define options for saving a file
-        self.file_opt1 = options1 = {}
-        options1['defaultextension'] = '.txt'
-        options1['filetypes'] = [('all files', '.txt'), ('text files', '.txt')]
-        options1['initialdir'] = './'
-        options1['initialfile'] = 'mes_1_dia_1_al_dia_30.txt'
-        options1['parent'] = root
-        options1['title'] = 'Guardar'
+        # Declara widgets de la ventana
+        # Se incluye el widget de tipo Button 'Calcular' que utiliza
+        # la opción 'command' para validar datos y calcular el
+        # importe a pagar cuando sea presionado
 
-        # defining options for opening a directory
-        self.dir_opt = options = {}
-        options['initialdir'] = 'C:\\'
-        options['mustexist'] = False
-        options['parent'] = root
-        options['title'] = 'Abrir carpeta'
+        self.boton0 = ttk.Button(self.raiz, text=" Procesar Carpeta de Registros",
+                                 command=self.procesardir)
+
+        self.boton = ttk.Button(self.raiz, text="Abrir Registro",
+                                 command=self.procesafile)
+
+        self.separ0 = ttk.Separator(self.raiz, orient=HORIZONTAL)
+
+        self.imagen1 = ttk.Label(self.raiz, image=tren,
+                                 anchor="center")
+
+        self.etiq3 = ttk.Label(self.raiz,
+                               text="Día inicial:")
+        self.dist = ttk.Entry(self.raiz, textvariable=self.ini,
+                              width=10)
+        self.etiq4 = ttk.Label(self.raiz, text="Dia final:")
+        self.coste = ttk.Entry(self.raiz, textvariable=self.fin,
+                               width=10)
+        self.etiq5 = ttk.Label(self.raiz, text="Terminal:")
+        self.etiq6 = ttk.Label(self.raiz, textvariable=self.total,
+                               foreground="yellow", background="black",
+                               borderwidth=5, anchor="e")
+        self.separ1 = ttk.Separator(self.raiz, orient=HORIZONTAL)
+
+        self.boton1 = ttk.Button(self.raiz, text="Graficar",
+                                 command=self.save)
+        self.boton2 = ttk.Button(self.raiz, text="Salir",
+                                 command=quit)
+
+        # empaquetado
+        self.imagen1.pack(side=TOP, fill=BOTH, expand=True,
+                          padx=10, pady=5)
+        self.boton0.pack(side=TOP, fill=BOTH, expand=True,
+                         padx=10, pady=10)
+        self.boton.pack(side=TOP, fill=BOTH, expand=True,
+                         padx=10, pady=10)
+        self.separ0.pack(side=TOP, fill=BOTH, expand=True,
+                         padx=5, pady=5)
+
+        self.etiq3.pack(side=TOP, fill=BOTH, expand=True,
+                        padx=10, pady=5)
+        self.dist.pack(side=TOP, fill=X, expand=True,
+                       padx=20, pady=5)
+        self.etiq4.pack(side=TOP, fill=BOTH, expand=True,
+                        padx=10, pady=5)
+        self.coste.pack(side=TOP, fill=X, expand=True,
+                        padx=20, pady=5)
+        self.etiq5.pack(side=TOP, fill=BOTH, expand=True,
+                        padx=10, pady=5)
+        self.etiq6.pack(side=TOP, fill=BOTH, expand=True,
+                        padx=20, pady=5)
+        self.separ1.pack(side=TOP, fill=BOTH, expand=True,
+                         padx=5, pady=5)
+        self.boton1.pack(side=LEFT, fill=BOTH, expand=True,
+                         padx=10, pady=10)
+        self.boton2.pack(side=RIGHT, fill=BOTH, expand=True,
+                         padx=10, pady=10)
+        self.raiz.mainloop()
 
     def __askdirectory(self):
 
         """Returns a selected directoryname."""
+        self.path_dir = filedialog.askdirectory()
 
-        return filedialog.askdirectory(**self.dir_opt)
-
-    def processdirectory(self):
+    def procesardir(self):
+        self.__askdirectory()
         try:
-            path = self.__askdirectory()
-            carpeta = Arch.Carpeta(path)
+            carpeta = Carpeta(self.path_dir)
             dic, fm, cm = carpeta.procesar()
-            if not (fm == "None"):
-                print("La fehca de mayor consumo fue {}, su consumo fue de {}W".format(str(fm), cm))
-            My_ventana(fm, cm, dic[fm][1], dic[fm][2])
+            if fm != "None":
+                self.total.set("Carpeta procesada")
+                self.grafica_emergente(fm, cm, dic[fm][1], dic[fm][2])
+            else:
+                self.total.set("No se encontraron archivos a procesar")
         except:
-            print('Error: la carpeta esta vacia')
+            self.total.set("No hay carpeta a procesar")
 
-    def __askopenfile(self):
+    def grafica_emergente(self, name, mayor, fechas, demanda):
+        def Borrar_fig():
+            # Matplotlib en Canvas
+            f.clf()
+            dataPlot.draw()
 
-        """Returns an opened file in read mode."""
+        master = Tk()
+        master.title("Mes con mayor demanda")
 
-        return filedialog.askopenfile(mode='r', **self.file_opt)
+        # Lienzo
+        cv = Canvas(master, width=800, height=800)
+        cv.pack(side=LEFT)
 
-    def processfile(self):
-        path = self.__askopenfile().name
-        print(path)
-        file = Arch.Archivo(path=path)
-        co, f = file.maxconsumo()
-        print("fecha", co, "consumo", f)
-        ventana()
+        # recuadro en ventana ppal
+        frame =Frame(master)
+        frame.pack(side=RIGHT, fill=BOTH)
 
-    def asksaveasfile(self):
+        # botones en frame
+        # pushbutton
+        b = ttk.Button(frame, text='Quit', command=master.destroy)
+        b.pack()
 
-        """Returns an opened file in write mode."""
+        # static text
+        l = ttk.Label(frame, text=("la demanda maxima se dio el\n" + name + "\ny fue de " + str(mayor) + "W"))
+        l.pack()
 
-        return filedialog.asksaveasfile(mode='w', **self.file_opt1)
+        # marco de Matplotlib in Canvas tkinter
 
-
-def My_ventana(name, mayor, fechas, demanda):
-    def Borrar_fig():
+        f = Figure(figsize=(12, 8), dpi=100)
+        dataPlot = FigureCanvasTkAgg(f, master=cv)
+        dataPlot.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        Borrar_fig()
         # Matplotlib en Canvas
-        f.clf()
+        a1 = f.add_subplot(111)
+        a1.plot(fechas, demanda, label="demanda")
+        f = dt.datetime.strptime(name, "%Y-%m-%d %H:%M:%S")
+        a1.plot(f, mayor, "o", label="Maximo")
+        a1.legend()
         dataPlot.draw()
 
-    master = tk.Tk()
-    master.title("Matplotlib-in-Canvas")
+        master.mainloop()
 
-    # Lienzo
-    cv = tk.Canvas(master, width=800, height=800)
-    cv.pack(side=tk.LEFT)
+    def __askopenfile(self):
+        try:
+            self.path_file = filedialog.askopenfile(filetypes=(('All files', '.*'), ('csv files', '.csv'))).name
+        except:
+            self.path_file = None
 
-    # recuadro en ventana ppal
-    frame = tk.Frame(master)
-    frame.pack(side=tk.RIGHT, fill=tk.BOTH)
+    def procesafile(self):
+        self.__askopenfile()
+        if self.path_file is None:
+            self.total.set("No hay archivo a procesar")
+        else:
+            self.file = Archivo(path=self.path_file)
+            self.total.set("Archivo listo a procesar")
 
-    # botones en frame
-    # pushbutton
-    b = tk.Button(frame, text='Quit', command=master.destroy)
-    b.pack()
+    def grafica_file(self):
+        def Borrar_fig():
+            # Matplotlib en Canvas
+            f.clf()
+            dataPlot.draw()
 
-    # static text
-    l = tk.Label(frame, text=("la demanda maxima se dio el\n" + name + "\ny fue de " + str(mayor) + "W"))
-    l.pack()
+        master = Tk()
+        master.title("Grafica de archivo procesado")
 
-    # marco de Matplotlib in Canvas tkinter
+        # Lienzo
+        cv = Canvas(master, width=800, height=800)
+        cv.pack(side=LEFT)
 
-    f = Figure(figsize=(12, 8), dpi=100)
-    dataPlot = FigureCanvasTkAgg(f, master=cv)
-    dataPlot.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-    Borrar_fig()
-    # Matplotlib en Canvas
-    a1 = f.add_subplot(111)
-    a1.plot(fechas, demanda, label="demanda")
-    f = dt.datetime.strptime(name, "%Y-%m-%d %H:%M:%S")
-    a1.plot(f, mayor, "o", label="Maximo")
-    a1.legend()
-    dataPlot.draw()
+        # recuadro en ventana ppal
+        frame =Frame(master)
+        frame.pack(side=RIGHT, fill=BOTH)
 
-    master.mainloop()
+        # botones en frame
+        # pushbutton
+        b = ttk.Button(frame, text='Quit', command=master.destroy)
+        b.pack()
 
-def ventana():
-    # Construcción de la ventana y sus controles
-    ventana = tk.Tk()  # Ventana principal
-    ventana.title("Crear gráfica!")
+        # marco de Matplotlib in Canvas tkinter
 
-    # Frame para agregar los entry y el botón
-    fr_datos_entrada = tk.Frame(ventana)
-    fr_datos_entrada.grid(row=0, column=0)
+        f = Figure(figsize=(12, 8), dpi=100)
+        dataPlot = FigureCanvasTkAgg(f, master=cv)
+        dataPlot.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        Borrar_fig()
+        # Matplotlib en Canvas
+        a1 = f.add_subplot(111)
+        fechas, demanda = self.file.procesar(int(self.ini.get()),int(self.fin.get()))
+        a1.plot(fechas, demanda, label="demanda")
+        a1.legend()
+        dataPlot.draw()
 
-    # dia inicial
-    lbl_ini = tk.Label(fr_datos_entrada, text="dia inicial:")
-    lbl_ini.grid(column=0, row=0)
+        master.mainloop()
 
-    var_init = tk.StringVar(value='1')
-    ent_init = tk.Entry(fr_datos_entrada, textvariable=var_init)
-    ent_init.grid(column=1, row=0)
+    def __asksavefile(self):
+        try:
+            self.nameout = filedialog.asksaveasfile(filetypes=(('All files', '.*'), ('text files', '.txt'))
+                                                    , initialfile='mes_1_del_dia_1_al_30.txt').name
+        except:
+            self.nameout = None
 
-    # dia final
-    lbl_fin = tk.Label(fr_datos_entrada, text="dia final:")
-    lbl_fin.grid(column=0, row=1)
+    def save(self):
+        if self.file is None:
+            self.total.set("No hay registro abierto")
+        else:
+            self.__asksavefile()
+            if self.nameout is None:
+                self.total.set("Ingrese el nombre del archivo a guardar")
+            else:
+                if 1 <= self.ini.get() < self.fin.get() <= 30:
+                    self.total.set("Registro procesado y guardado")
+                    self.file.escribr(self.nameout, True, int(self.ini.get()), int(self.fin.get()))
+                    self.grafica_file()
+                else:
+                    self.total.set("Rango de fechas incorrectos")
+                    self.ini.set(1)
+                    self.fin.set(30)
 
-    var_fin = tk.StringVar(value='30')
-    ent_fin = tk.Entry(fr_datos_entrada, textvariable=var_fin)
-    ent_fin.grid(column=1, row=1)
-
-    # Botón graficar
-    boton = tk.Button(fr_datos_entrada, text="Graficar")
-    boton.grid(column=1, row=2)
-    # Ejecuto la aplicación
-    ventana.mainloop()
-
-
-# def ventana2():
-#     master = tk.Tk()
-#     master.title("Matplotlib-in-Canvas")
-#
-#     # Lienzo
-#     cv = tk.Canvas(master, width=800, height=800)
-#     cv.pack(side=tk.LEFT)
-#
-#     # recuadro en ventana ppal
-#     frame = tk.Frame(master)
-#     frame.pack(side=tk.RIGHT, fill=tk.BOTH)
-#
-#     # botones en frame
-#     # pushbutton
-#     b = tk.Button(frame, text='Quit', command=master.destroy)
-#     b.pack()
-#
-#     # static text
-#     l = tk.Label(frame, text="hola")
-#     l.pack()
-#
-#     # marco de Matplotlib in Canvas tkinter
-#
-#     f = Figure(figsize=(12, 8), dpi=100)
-#     dataPlot = FigureCanvasTkAgg(f, master=cv)
-#     dataPlot.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-#     Borrar_fig()
-#     # Matplotlib en Canvas
-#     a1 = f.add_subplot(111)
-#     a1.plot(fechas, demanda, label="demanda")
-#     a1.legend()
-#     dataPlot.draw()
-#
-#     master.mainloop()
+def main():
+    mi_app = Aplicacion()
+    return 0
 
 
 if __name__ == '__main__':
-    raiz = tk.Tk()
-    Application(raiz).pack()
-    raiz.mainloop()
+    main()
