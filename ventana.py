@@ -1,17 +1,13 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-
 from archivo import Carpeta, Archivo
 import datetime as dt
 
 
-class Aplicacion():
+class Aplicacion:
     def __init__(self):
         self.raiz = Tk()
         self.raiz.title("Demandas Energeticas")
@@ -40,7 +36,7 @@ class Aplicacion():
                                  command=self.procesardir)
 
         self.boton = ttk.Button(self.raiz, text="Abrir Registro",
-                                 command=self.procesafile)
+                                command=self.procesafile)
 
         self.separ0 = ttk.Separator(self.raiz, orient=HORIZONTAL)
 
@@ -60,7 +56,7 @@ class Aplicacion():
                                borderwidth=5, anchor="e")
         self.separ1 = ttk.Separator(self.raiz, orient=HORIZONTAL)
 
-        self.boton1 = ttk.Button(self.raiz, text="Graficar",
+        self.boton1 = ttk.Button(self.raiz, text="Guardar",
                                  command=self.save)
         self.boton2 = ttk.Button(self.raiz, text="Salir",
                                  command=quit)
@@ -71,7 +67,7 @@ class Aplicacion():
         self.boton0.pack(side=TOP, fill=BOTH, expand=True,
                          padx=10, pady=10)
         self.boton.pack(side=TOP, fill=BOTH, expand=True,
-                         padx=10, pady=10)
+                        padx=10, pady=10)
         self.separ0.pack(side=TOP, fill=BOTH, expand=True,
                          padx=5, pady=5)
 
@@ -127,7 +123,7 @@ class Aplicacion():
         cv.pack(side=LEFT)
 
         # recuadro en ventana ppal
-        frame =Frame(master)
+        frame = Frame(master)
         frame.pack(side=RIGHT, fill=BOTH)
 
         # botones en frame
@@ -183,7 +179,7 @@ class Aplicacion():
         cv.pack(side=LEFT)
 
         # recuadro en ventana ppal
-        frame =Frame(master)
+        frame = Frame(master)
         frame.pack(side=RIGHT, fill=BOTH)
 
         # botones en frame
@@ -199,7 +195,7 @@ class Aplicacion():
         Borrar_fig()
         # Matplotlib en Canvas
         a1 = f.add_subplot(111)
-        fechas, demanda = self.file.procesar(int(self.ini.get()),int(self.fin.get()))
+        fechas, demanda = self.file.procesar(int(self.ini.get()), int(self.fin.get()))
         a1.plot(fechas, demanda, label="demanda")
         a1.legend()
         dataPlot.draw()
@@ -207,33 +203,39 @@ class Aplicacion():
         master.mainloop()
 
     def __asksavefile(self):
-        try:
+        """
+        Función encargada de crear un archivo a guardar
+        """
+        try:    # En caso de que se cree un archivo al guardar
+            # modificamos el atributo nameout con la ruta del archivo creado
             self.nameout = filedialog.asksaveasfile(filetypes=(('All files', '.*'), ('text files', '.txt'))
                                                     , initialfile='mes_1_del_dia_1_al_30.txt').name
-        except:
+        except:     # En caso de error
+            # modificamos el atributo nameout con None
             self.nameout = None
 
     def save(self):
-        if self.file is None:
-            self.total.set("No hay registro abierto")
+        """
+        Funcion llamada cuando se presiona el boton guardar
+        """
+        if self.file is None:  # Se verifica si existe un registro de la demanda en colombia abierto
+            self.total.set("No hay registro abierto")  # Muestra en el widget entry informacion para el usuario
         else:
-            self.__asksavefile()
-            if self.nameout is None:
-                self.total.set("Ingrese el nombre del archivo a guardar")
-            else:
-                if 1 <= self.ini.get() < self.fin.get() <= 30:
-                    self.total.set("Registro procesado y guardado")
+            self.__asksavefile()  # En caso de que exista un archivo abierto, pregunto el nombre del archivo a guardar
+            if self.nameout is None:  # Si no se ingresan los datos correctos
+                self.total.set("Ingrese el nombre del archivo a guardar")  # Muestra un mensaje para el usuario
+            else:  # si se ingresa un archivo a guardar
+                if 1 <= self.ini.get() < self.fin.get() <= 30:  # verifico si el rango de dias ingresados por el usuario
+                    self.total.set("Registro procesado y guardado")  # Muestra un mensaje para el usuario
+                    # proceso y escribo el archivo de salida
                     self.file.escribr(self.nameout, True, int(self.ini.get()), int(self.fin.get()))
-                    self.grafica_file()
-                else:
-                    self.total.set("Rango de fechas incorrectos")
+                    self.grafica_file()  # Grafico el archivo procesado
+                else: # En caso de que el rango de dias se invalido
+                    self.total.set("Rango de fechas incorrectos")   # Muestro un mensaje al usuario
+                    # Establezco un rango de dias validos
                     self.ini.set(1)
-                    self.fin.set(30)
-
-def main():
-    mi_app = Aplicacion()
-    return 0
+                    self.fin.set(10)
 
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     mi_app = Aplicacion()
